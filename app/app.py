@@ -9,8 +9,38 @@ from datetime import date
 from colorama import Fore, Style
 
 CURRENTPATH = os.path.dirname(os.path.realpath(__file__))
-TEMPLATEPATH = os.path.join(CURRENTPATH, "templates")
+templatePath = os.path.join(CURRENTPATH, "templates")
 running = True
+
+
+settings = {}
+
+def validateSettingKey(keyname, defaultval):
+    settingKeys = list(settings.keys())
+    if keyname not in settingKeys:
+        settings.update({keyname: defaultval})        
+        
+with open("C:/Projects/ProjFetch/app/settings.json", "r", encoding='utf-8') as f:
+
+    try:
+        print("Successfully loaded settings")
+        settings = json.load(f)
+    except:
+        print("settings is empty")
+        settings = {}
+
+    validateSettingKey('template-path', templatePath)
+    validateSettingKey('project-path', '')    
+    
+
+settingKeys = list(settings.keys())
+
+
+templatePath = settings.get('template-path', templatePath)
+projectPath = settings.get('project-path', '')
+
+    
+print(settings)
 
 def query(color, outputText):
     color_print(color, outputText)
@@ -55,16 +85,13 @@ def downloadTemplate():
                         f.write(chunk)
             color_print(Fore.GREEN, f"Successfully downloaded: {templateName.lower()}.zip")
         #    os.makedirs(templateName, exist_ok=True)
-            target_path = os.path.join(TEMPLATEPATH,templateName)
+            target_path = os.path.join(templatePath,templateName)
             shutil.unpack_archive(path, target_path)
             os.remove(path)
         else:
             data = r.json()
             color_print(Fore.RED, f"ERROR: {data.get('message')}")
 
-    
-
-    
 
 def uploadTemplate():
     filePath = input("Enter folder path: ")
@@ -112,35 +139,74 @@ def uploadTemplate():
     
 
 def templatesFunc():
-    templates = os.listdir(TEMPLATEPATH)
+    templates = os.listdir(templatePath)
     templateIndex = querySelector(templates)
 
     chosenTemplate = templates[templateIndex]
-    chosenTemplatePath = os.path.join(TEMPLATEPATH, chosenTemplate)
+    chosentemplatePath = os.path.join(templatePath, chosenTemplate)
 
     options = querySelector(["Create Project", "Modify", "Details"])
 
     match options:
+        case 0:
+            projectName = input("Enter project name: ")
+            projectDirectoryPath = input("Enter project Path: ")
+            projectPath = os.path.join(projectDirectoryPath, projectName)
+
+            shutil.copytree(chosentemplatePath, os.path.join(projectPath, projectName))
+            
+            projectTemplateDetailsPath = os.path.join(projectPath, "TemplateDetails.json")
+            os.remove(projectTemplateDetailsPath)
+        case 1:
+            Modification = querySelector(["Name"])
+            match Modification:
+                case 0:
+                    #change the name
+                    newName = input("Enter the new name the template should have: ")
+                    newNamePath = os.path.join(templatePath, newName)
+                    os.rename(chosentemplatePath, newNamePath)
         case 2:
             #extract details and print them out
-            TemplateDetailsPath = os.path.join(chosenTemplatePath, "TemplateDetails.json")
+            TemplateDetailsPath = os.path.join(chosentemplatePath, "TemplateDetails.json")
             with open(TemplateDetailsPath, "r") as f:
                 TemplateDetailsObject = json.load(f)
 
                 for key, val in TemplateDetailsObject.items():
                     print(f"{key}: {val}")
 
+def settingsFunc():
+    settingSubjectIndex = querySelector(["Paths"])
+
+    match settingSubjectIndex:
+        case 0:
+            pathSettings = []
+            print(settingKeys)
+            for key in settingKeys:
+                print(key)
+                if '-path' in key:
+                    print("through")
+                    pathSettings.append(key)
+            pathSubjectIndex = querySelector(pathSettings)
+            selectedPathKey = settingKeys[pathSubjectIndex]
+
+            newVal = input(f"What value do you want to chance {selectedPathKey} to?: ")
+            settings.update({selectedPathKey: newVal})
+
+
+
 def exit():
     global running
     running = False
     color_print(Fore.BLUE, "Exiting.. Goodbye!")
 
-ModeOptionFunctions = [downloadTemplate, uploadTemplate, templatesFunc, exit]
+ModeOptionFunctions = [downloadTemplate, uploadTemplate, templatesFunc, settingsFunc, exit]
 
 while running:
 
-    ModeOption = querySelector(["Download Template", "Upload Template", "Create Project/Templates", "Exit"])
+    ModeOption = querySelector(["Download Template", "Upload Template", "Create Project/Templates", "Settings", "Exit"])
     ModeOptionFunctions[ModeOption]()
 
-
+with open("C:/Projects/ProjFetch/app/settings.json", "w", encoding='utf-8') as f:
+    print("Modifying settings.json...")
+    json.dump(settings, f, indent=4)
 
