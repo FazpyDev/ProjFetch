@@ -5,6 +5,8 @@ import os
 import shutil
 import zipfile
 from datetime import date
+import importlib
+import importlib.util
 
 from colorama import Fore, Style
 
@@ -158,13 +160,52 @@ def templatesFunc():
             projectTemplateDetailsPath = os.path.join(projectPath, "TemplateDetails.json")
             os.remove(projectTemplateDetailsPath)
         case 1:
-            Modification = querySelector(["Name"])
-            match Modification:
-                case 0:
-                    #change the name
-                    newName = input("Enter the new name the template should have: ")
-                    newNamePath = os.path.join(templatePath, newName)
-                    os.rename(chosentemplatePath, newNamePath)
+ #           Modification = querySelector(["Name"])
+ #           match Modification:
+ #               case 0:
+ #                   #change the name
+ #                   newName = input("Enter the new name the template should have: ")
+ #                   newNamePath = os.path.join(templatePath, newName)
+ #                   os.rename(chosentemplatePath, newNamePath)
+            TemplatePluginConfigPath = os.path.join(chosentemplatePath, "TemplatePluginConfig.json")
+            with open(TemplatePluginConfigPath, "r", encoding='utf-8') as f:
+                TemplatePluginConfig = json.load(f)
+            
+            modules = []
+            TemplatePluginConfigValues = list(TemplatePluginConfig.values())
+            for plugin in list(TemplatePluginConfigValues):
+                module = plugin.get('module')
+                if module:
+                    modules.append(module)
+
+            selectedModuleIndex = querySelector(modules)
+            selectedModule = modules[selectedModuleIndex]
+
+            print(selectedModule)
+
+            plugin_directory = os.path.join(chosentemplatePath, "plugins")
+            plugin_path = os.path.join(plugin_directory, selectedModule + ".py")
+            spec = importlib.util.spec_from_file_location(
+                selectedModule, plugin_path
+            )
+
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+
+            pluginConfig = TemplatePluginConfigValues[selectedModuleIndex]
+            arguementsNeeded = pluginConfig.get("arguments")
+
+            passedArguments = []
+
+            for argument in arguementsNeeded:
+                argumentName = argument.get('name')
+                argumentType = argument.get('type')
+
+                argumentVal = input(f"Please enter a {argumentType} for {argumentName}: ")
+                passedArguments.append(argumentVal)
+
+            module.run(*passedArguments)
+
         case 2:
             #extract details and print them out
             TemplateDetailsPath = os.path.join(chosentemplatePath, "TemplateDetails.json")
@@ -191,8 +232,6 @@ def settingsFunc():
 
             newVal = input(f"What value do you want to chance {selectedPathKey} to?: ")
             settings.update({selectedPathKey: newVal})
-
-
 
 def exit():
     global running
