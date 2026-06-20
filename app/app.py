@@ -139,6 +139,15 @@ def uploadTemplate():
    # print(r.status_code)
    # print(r.text)
     
+def createProject(chosentemplatePath):
+        projectName = input("Enter project name: ")
+        projectDirectoryPath = input("Enter project Path: ")
+        projectPath = os.path.join(projectDirectoryPath, projectName)
+
+        shutil.copytree(chosentemplatePath, projectPath) #os.path.join(projectPath, projectName)
+        
+        projectTemplateDetailsPath = os.path.join(projectPath, "TemplateDetails.json")
+        os.remove(projectTemplateDetailsPath)
 
 def templatesFunc():
     templates = os.listdir(templatePath)
@@ -151,22 +160,11 @@ def templatesFunc():
 
     match options:
         case 0:
-            projectName = input("Enter project name: ")
-            projectDirectoryPath = input("Enter project Path: ")
-            projectPath = os.path.join(projectDirectoryPath, projectName)
+            createProject(chosentemplatePath)
 
-            shutil.copytree(chosentemplatePath, os.path.join(projectPath, projectName))
-            
-            projectTemplateDetailsPath = os.path.join(projectPath, "TemplateDetails.json")
-            os.remove(projectTemplateDetailsPath)
-        case 1:
- #           Modification = querySelector(["Name"])
- #           match Modification:
- #               case 0:
- #                   #change the name
- #                   newName = input("Enter the new name the template should have: ")
- #                   newNamePath = os.path.join(templatePath, newName)
- #                   os.rename(chosentemplatePath, newNamePath)
+            if not query(Fore.MAGENTA, "Would you like to use some plugins (if it has some) ? (Y//N)"):
+                return
+
             TemplatePluginConfigPath = os.path.join(chosentemplatePath, "TemplatePluginConfig.json")
             with open(TemplatePluginConfigPath, "r", encoding='utf-8') as f:
                 TemplatePluginConfig = json.load(f)
@@ -205,6 +203,15 @@ def templatesFunc():
                 passedArguments.append(argumentVal)
 
             module.run(*passedArguments)
+        case 1:
+            Modification = querySelector(["Name"])
+            match Modification:
+                case 0:
+                    #change the name
+                    newName = input("Enter the new name the template should have: ")
+                    newNamePath = os.path.join(templatePath, newName)
+                    os.rename(chosentemplatePath, newNamePath)
+            print("test")
 
         case 2:
             #extract details and print them out
