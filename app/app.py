@@ -4,7 +4,8 @@ from clifunctions import color_print, querySelector
 from colorama import Fore, Style
 from backendfuncs import downloadTemplate, uploadTemplate
 from template_manager import manage_templates
-
+from projectFuncs import configureProject
+import json
 #FUNCTIONS
 
 #MODE Functions
@@ -45,12 +46,25 @@ settings = get_settings()
 settingKeys = list(settings.keys())
 
 templatePath = settings.get('template-path', templatePath)
-projectPath = settings.get('project-path', '')
+projectPath = settings.get('projects-path', '')
+print(projectPath)
+def projectsFunc():
+    #get a list of projects
+    projects = os.listdir(projectPath)
+    selectedProject = querySelector(projects)
+    projectName = projects[selectedProject]
+    selectedProjectPath = os.path.join(projectPath, projectName)
 
-def projects():
-    
+    projectDetailsPath = os.path.join(selectedProjectPath, "ProjectDetails.json")
+    with open(projectDetailsPath, "r", encoding='utf-8') as f:
+        projectDetails = json.load(f)
+        projectTemplate = projectDetails.get("template")
 
-ModeOptionFunctions = [downloadTemplate, uploadTemplate, manage_templates, projects, settingsFunc, exit]
+        chosenTemplatePath = os.path.join(templatePath, projectTemplate)
+        configureProject(selectedProjectPath, chosenTemplatePath)
+
+
+ModeOptionFunctions = [downloadTemplate, uploadTemplate, manage_templates, projectsFunc, settingsFunc, exit]
 
 while running:
 
