@@ -10,44 +10,27 @@ import importlib.util
 
 from colorama import Fore, Style
 
-CURRENTPATH = os.path.dirname(os.path.realpath(__file__))
-templatePath = os.path.join(CURRENTPATH, "templates")
-running = True
+#FUNCTIONS
 
-settings = {}
-
-def validateSettingKey(keyname, defaultval):
-    settingKeys = list(settings.keys())
-    if keyname not in settingKeys:
-        settings.update({keyname: defaultval})        
-        
-with open("C:/Projects/ProjFetch/app/settings.json", "r", encoding='utf-8') as f:
-
-    try:
-        print("Successfully loaded settings")
-        settings = json.load(f)
-    except:
-        print("settings is empty")
-        settings = {}
-
-    validateSettingKey('template-path', templatePath)
-    validateSettingKey('project-path', '')    
-    
-
-settingKeys = list(settings.keys())
-
-templatePath = settings.get('template-path', templatePath)
-projectPath = settings.get('project-path', '')
-
-print(settings)
+#CLI functions
 
 def query(color, outputText):
     color_print(color, outputText)
     userInput = input()
     return userInput.lower().startswith('y')
 
+def querySelector(queryList):
+    print("Please select an option: ")
+    for i, query in enumerate(queryList):
+        print(f"{i+1}. {query}")
+    
+    userInput = input()
+    return int(userInput) -1
+
 def color_print(color, text):
     print(color + text + Style.RESET_ALL)
+
+#BACKEND functions
 
 def attemptRequest(templateName):
     try:
@@ -61,14 +44,6 @@ def attemptRequest(templateName):
             running = False
     else:
         return r
-
-def querySelector(queryList):
-    print("Please select an option: ")
-    for i, query in enumerate(queryList):
-        print(f"{i+1}. {query}")
-    
-    userInput = input()
-    return int(userInput) -1
 
 def downloadFile(path, r):
     with open(path, "wb") as f:
@@ -101,18 +76,6 @@ def uploadFile(path, fileName):
             files={"file": f}
         )
 
-def zipFiles(source):
-    return shutil.make_archive(source, 'zip', source)
-
-def updateTemplateDetails(filePath):
-
-        NiceDate =  date.today().isoformat()
-        templateDetails = {"creator": "Ian", "version": 0.01, "time-created": NiceDate}
-        templateDetailsPath = os.path.join(filePath, "TemplateDetails.json")
-
-        with open(templateDetailsPath, "w", encoding="utf-8") as f:
-            json.dump(templateDetails, f, indent=4)
-
 def uploadTemplate():
     filePath = input("Enter folder path: ")
 
@@ -137,54 +100,25 @@ def uploadTemplate():
     
     uploadFile(zip_path, fileName)
     os.remove(zip_path)
-    
-def createProject(chosentemplatePath):
-        projectName = input("Enter project name: ")
-        projectDirectoryPath = input("Enter project Path: ")
-        projectPath = os.path.join(projectDirectoryPath, projectName)
 
-        shutil.copytree(chosentemplatePath, projectPath) #os.path.join(projectPath, projectName)
-        
-        projectTemplateDetailsPath = os.path.join(projectPath, "TemplateDetails.json")
-        os.remove(projectTemplateDetailsPath)
+#MODE Functions
 
-        return projectPath
+def exit():
+    global running
+    running = False
+    color_print(Fore.BLUE, "Exiting.. Goodbye!")
 
-def loadTemplatePluginConfig(chosentemplatePath):
-        TemplatePluginConfigPath = os.path.join(chosentemplatePath, "TemplatePluginConfig.json")
-        with open(TemplatePluginConfigPath, "r", encoding='utf-8') as f:
-            return json.load(f)
+def settingsFunc():
+    settingSubjectIndex = querySelector(["Paths"])
 
-def loadTemplateModules(TemplatePluginConfig):
-        modules = []
-        TemplatePluginConfigValues = list(TemplatePluginConfig.values())
-        for plugin in list(TemplatePluginConfigValues):
-            module = plugin.get('module')
-            if module:
-                modules.append(module)
+    match settingSubjectIndex:
+        case 0:
+            pathSettings = getPathSettings()
+            pathSubjectIndex = querySelector(pathSettings)
+            selectedPathKey = settingKeys[pathSubjectIndex]
 
-        return modules
-
-def getArguements(TemplatePluginConfigValues, selectedModuleIndex):
-    pluginConfig = TemplatePluginConfigValues[selectedModuleIndex]
-    arguementsNeeded = pluginConfig.get("arguments")
-
-    passedArguments = []
-
-    for argument in arguementsNeeded:
-        argumentName = argument.get('name')
-        argumentType = argument.get('type')
-
-        argumentVal = input(f"Please enter a {argumentType} for {argumentName}: ")
-        passedArguments.append(argumentVal)
-
-    return passedArguments
-
-def chooseTemplate():
-    templates = os.listdir(templatePath)
-    templateIndex = querySelector(templates)
-
-    return templates[templateIndex]
+            newVal = input(f"What value do you want to chance {selectedPathKey} to?: ")
+            settings.update({selectedPathKey: newVal})
 
 def configureProject(projectPath, chosentemplatePath):
         TemplatePluginConfig = loadTemplatePluginConfig(chosentemplatePath)
@@ -208,6 +142,17 @@ def configureProject(projectPath, chosentemplatePath):
 
         module.run(projectPath, *passedArguments)
 
+def createProject(chosentemplatePath):
+        projectName = input("Enter project name: ")
+        projectDirectoryPath = input("Enter project Path: ")
+        projectPath = os.path.join(projectDirectoryPath, projectName)
+
+        shutil.copytree(chosentemplatePath, projectPath) #os.path.join(projectPath, projectName)
+        
+        projectTemplateDetailsPath = os.path.join(projectPath, "TemplateDetails.json")
+        os.remove(projectTemplateDetailsPath)
+
+        return projectPath
 
 def templatesFunc():
     chosenTemplate = chooseTemplate()
@@ -234,6 +179,54 @@ def templatesFunc():
                 for key, val in TemplateDetailsObject.items():
                     print(f"{key}: {val}")
 
+def chooseTemplate():
+    templates = os.listdir(templatePath)
+    templateIndex = querySelector(templates)
+
+    return templates[templateIndex]
+
+def loadTemplatePluginConfig(chosentemplatePath):
+        TemplatePluginConfigPath = os.path.join(chosentemplatePath, "TemplatePluginConfig.json")
+        with open(TemplatePluginConfigPath, "r", encoding='utf-8') as f:
+            return json.load(f)
+
+def loadTemplateModules(TemplatePluginConfig):
+        modules = []
+        TemplatePluginConfigValues = list(TemplatePluginConfig.values())
+        for plugin in list(TemplatePluginConfigValues):
+            module = plugin.get('module')
+            if module:
+                modules.append(module)
+
+        return modules
+
+def zipFiles(source):
+    return shutil.make_archive(source, 'zip', source)
+
+def updateTemplateDetails(filePath):
+
+        NiceDate =  date.today().isoformat()
+        templateDetails = {"creator": "Ian", "version": 0.01, "time-created": NiceDate}
+        templateDetailsPath = os.path.join(filePath, "TemplateDetails.json")
+
+        with open(templateDetailsPath, "w", encoding="utf-8") as f:
+            json.dump(templateDetails, f, indent=4)
+    
+def getArguements(TemplatePluginConfigValues, selectedModuleIndex):
+    pluginConfig = TemplatePluginConfigValues[selectedModuleIndex]
+    arguementsNeeded = pluginConfig.get("arguments")
+
+    passedArguments = []
+
+    for argument in arguementsNeeded:
+        argumentName = argument.get('name')
+        argumentType = argument.get('type')
+
+        argumentVal = input(f"Please enter a {argumentType} for {argumentName}: ")
+        passedArguments.append(argumentVal)
+
+    return passedArguments
+
 def getPathSettings():
     pathSettings = []
     print(settingKeys)
@@ -244,22 +237,38 @@ def getPathSettings():
             pathSettings.append(key)
     return pathSettings
 
-def settingsFunc():
-    settingSubjectIndex = querySelector(["Paths"])
+def saveSettings():
+    with open("C:/Projects/ProjFetch/app/settings.json", "w", encoding='utf-8') as f:
+        print("Modifying settings.json...")
+        json.dump(settings, f, indent=4)
 
-    match settingSubjectIndex:
-        case 0:
-            pathSettings = getPathSettings()
-            pathSubjectIndex = querySelector(pathSettings)
-            selectedPathKey = settingKeys[pathSubjectIndex]
+def validateSettingKey(keyname, defaultval):
+    settingKeys = list(settings.keys())
+    if keyname not in settingKeys:
+        settings.update({keyname: defaultval})        
 
-            newVal = input(f"What value do you want to chance {selectedPathKey} to?: ")
-            settings.update({selectedPathKey: newVal})
+currentpath = os.path.dirname(os.path.realpath(__file__))
+templatePath = os.path.join(currentpath, "templates")
+running = True
 
-def exit():
-    global running
-    running = False
-    color_print(Fore.BLUE, "Exiting.. Goodbye!")
+settings = {}
+
+with open("C:/Projects/ProjFetch/app/settings.json", "r", encoding='utf-8') as f:
+
+    try:
+        print("Successfully loaded settings")
+        settings = json.load(f)
+    except:
+        print("settings is empty")
+        settings = {}
+
+    validateSettingKey('template-path', templatePath)
+    validateSettingKey('project-path', '')    
+
+settingKeys = list(settings.keys())
+
+templatePath = settings.get('template-path', templatePath)
+projectPath = settings.get('project-path', '')
 
 ModeOptionFunctions = [downloadTemplate, uploadTemplate, templatesFunc, settingsFunc, exit]
 
@@ -268,7 +277,5 @@ while running:
     ModeOption = querySelector(["Download Template", "Upload Template", "Create Project/Templates", "Settings", "Exit"])
     ModeOptionFunctions[ModeOption]()
 
-with open("C:/Projects/ProjFetch/app/settings.json", "w", encoding='utf-8') as f:
-    print("Modifying settings.json...")
-    json.dump(settings, f, indent=4)
+saveSettings()
 
