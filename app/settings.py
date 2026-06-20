@@ -3,35 +3,39 @@ import os
 
 settings = {}
 
-currentpath = os.path.dirname(os.path.realpath(__file__))
-templatePath = os.path.join(currentpath, "templates")
+current_path = os.path.dirname(os.path.realpath(__file__))
+template_path = os.path.join(current_path, "templates")
+SETTINGS_FILE_PATH = "C:/Projects/ProjFetch/app/settings.json"
 
-def validateSettingKey(keyname, defaultval):
-    settingKeys = list(settings.keys())
-    if keyname not in settingKeys:
-        settings.update({keyname: defaultval})        
+def initialize_setting_key(key_name, default_value):
+    """Ensures a configuration key exists without wiping pre-existing user data."""
+    if key_name not in settings:
+        settings[key_name] = default_value      
 
-def loadSettings():
-
-    with open("C:/Projects/ProjFetch/app/settings.json", "r", encoding='utf-8') as f:
-
+def read_settings_file():
+    """Reads configuration data directly from the system storage layer."""
+    with open(SETTINGS_FILE_PATH, "r", encoding='utf-8') as f:
         try:
+            loaded_data = json.load(f)
             print("Successfully loaded settings")
-            global settings
-            settings = json.load(f)
-        except:
-            print("settings is empty")
-            settings = {}
+            
+            # Mutate the existing dictionary object to preserve cross-file memory references
+            settings.clear()
+            settings.update(loaded_data)
+        except Exception:
+            print("Settings file is empty or invalid")
+            settings.clear()
 
-        validateSettingKey('template-path', templatePath)
-        validateSettingKey('project-path', '')    
+        initialize_setting_key('template-path', template_path)
+        initialize_setting_key('project-path', '')    
 
-
-def saveSettings():
-    with open("C:/Projects/ProjFetch/app/settings.json", "w", encoding='utf-8') as f:
+def write_settings_file():
+    """Commits current execution settings safely back down to local disk."""
+    with open(SETTINGS_FILE_PATH, "w", encoding='utf-8') as f:
         json.dump(settings, f, indent=4)
 
-def getSettings():
-    loadSettings()
+def get_settings():
+    """Exposes settings map cleanly to downstream execution processes."""
+    read_settings_file()
     print(settings)
     return settings

@@ -6,10 +6,10 @@ from clifunctions import querySelector
 from plugin_engine import extract_plugin_modules, prompt_plugin_arguments
 def configureProject(projectPath, chosentemplatePath):
         from template_manager import (
-                loadTemplatePluginConfig
+                load_template_plugin_config
         )
 
-        TemplatePluginConfig = loadTemplatePluginConfig(chosentemplatePath)
+        TemplatePluginConfig = load_template_plugin_config(chosentemplatePath)
         TemplatePluginConfigValues = list(TemplatePluginConfig.values())
 
         modules = extract_plugin_modules(TemplatePluginConfig)

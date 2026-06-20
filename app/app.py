@@ -1,9 +1,9 @@
 import os
-from settings import saveSettings, getSettings
+from settings import get_settings, write_settings_file
 from clifunctions import color_print, querySelector
 from colorama import Fore, Style
 from backendfuncs import downloadTemplate, uploadTemplate
-from template_manager import templatesFunc
+from template_manager import manage_templates
 
 #FUNCTIONS
 
@@ -40,19 +40,19 @@ currentpath = os.path.dirname(os.path.realpath(__file__))
 templatePath = os.path.join(currentpath, "templates")
 running = True
 
-settings = getSettings()
+settings = get_settings()
 
 settingKeys = list(settings.keys())
 
 templatePath = settings.get('template-path', templatePath)
 projectPath = settings.get('project-path', '')
 
-ModeOptionFunctions = [downloadTemplate, uploadTemplate, templatesFunc, settingsFunc, exit]
+ModeOptionFunctions = [downloadTemplate, uploadTemplate, manage_templates, settingsFunc, exit]
 
 while running:
 
     ModeOption = querySelector(["Download Template", "Upload Template", "Create Project/Templates", "Settings", "Exit"])
     ModeOptionFunctions[ModeOption]()
 
-saveSettings()
+write_settings_file()
 

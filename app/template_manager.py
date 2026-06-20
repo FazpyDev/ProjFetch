@@ -5,39 +5,39 @@ from colorama import Fore
 from clifunctions import query, querySelector
 from projectFuncs import createProject, configureProject
 
-currentpath = os.path.dirname(os.path.realpath(__file__))
-templatePath = os.path.join(currentpath, "templates")
+current_path = os.path.dirname(os.path.realpath(__file__))
+template_path = os.path.join(current_path, "templates")
 
-def templatesFunc():
-    chosenTemplate = chooseTemplate()
-    chosentemplatePath = os.path.join(templatePath, chosenTemplate)
+def manage_templates():
+    chosen_template = choose_template()
+    chosen_template_path = os.path.join(template_path, chosen_template)
 
     options = querySelector(["Create Project", "Details"])
 
     match options:
         case 0:
-            projectPath = createProject(chosentemplatePath)
+            project_path = createProject(chosen_template_path)
 
-            if not query(Fore.MAGENTA, "Would you like to use some plugins (if it has some) ? (Y//N)"):
+            if not query(Fore.MAGENTA, "Would you like to use some plugins (if it has some)? (Y/N)"):
                 return
             
-            configureProject(projectPath, chosentemplatePath)        
+            configureProject(project_path, chosen_template_path)        
 
         case 1:
-            TemplateDetailsPath = os.path.join(chosentemplatePath, "TemplateDetails.json")
-            with open(TemplateDetailsPath, "r") as f:
-                TemplateDetailsObject = json.load(f)
+            details_path = os.path.join(chosen_template_path, "TemplateDetails.json")
+            with open(details_path, "r", encoding="utf-8") as f:
+                details_object = json.load(f)
 
-                for key, val in TemplateDetailsObject.items():
+                for key, val in details_object.items():
                     print(f"{key}: {val}")
 
-def chooseTemplate():
-    templates = os.listdir(templatePath)
-    templateIndex = querySelector(templates)
+def choose_template():
+    templates = os.listdir(template_path)
+    template_index = querySelector(templates)
 
-    return templates[templateIndex]
+    return templates[template_index]
 
-def loadTemplatePluginConfig(chosentemplatePath):
-    TemplatePluginConfigPath = os.path.join(chosentemplatePath, "TemplatePluginConfig.json")
-    with open(TemplatePluginConfigPath, "r", encoding='utf-8') as f:
+def load_template_plugin_config(chosen_template_path):
+    config_path = os.path.join(chosen_template_path, "TemplatePluginConfig.json")
+    with open(config_path, "r", encoding='utf-8') as f:
         return json.load(f)

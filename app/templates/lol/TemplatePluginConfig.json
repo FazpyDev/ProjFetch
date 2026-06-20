@@ -1,0 +1,12 @@
+{
+    "NameChange": {
+        "text": "Change Name",
+        "module": "name_change",
+        "arguments": [
+            {
+                "name": "new_name",
+                "type": "string"
+            }
+        ]
+    }
+}
