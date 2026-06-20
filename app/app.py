@@ -14,7 +14,6 @@ CURRENTPATH = os.path.dirname(os.path.realpath(__file__))
 templatePath = os.path.join(CURRENTPATH, "templates")
 running = True
 
-
 settings = {}
 
 def validateSettingKey(keyname, defaultval):
@@ -37,11 +36,9 @@ with open("C:/Projects/ProjFetch/app/settings.json", "r", encoding='utf-8') as f
 
 settingKeys = list(settings.keys())
 
-
 templatePath = settings.get('template-path', templatePath)
 projectPath = settings.get('project-path', '')
 
-    
 print(settings)
 
 def query(color, outputText):
@@ -73,6 +70,12 @@ def querySelector(queryList):
     userInput = input()
     return int(userInput) -1
 
+def downloadFile(path, r):
+    with open(path, "wb") as f:
+        for chunk in r.iter_content(chunk_size=8192):
+            if chunk:
+                f.write(chunk)
+
 def downloadTemplate():
     templateName = input("Enter the name of the template: ").lower()
     path = f"{templateName}.zip"
@@ -81,10 +84,7 @@ def downloadTemplate():
     if running:
         if r.status_code == 201:
 
-            with open(path, "wb") as f:
-                for chunk in r.iter_content(chunk_size=8192):
-                    if chunk:
-                        f.write(chunk)
+            downloadFile(path, r)
             color_print(Fore.GREEN, f"Successfully downloaded: {templateName.lower()}.zip")
         #    os.makedirs(templateName, exist_ok=True)
             target_path = os.path.join(templatePath,templateName)
@@ -94,6 +94,24 @@ def downloadTemplate():
             data = r.json()
             color_print(Fore.RED, f"ERROR: {data.get('message')}")
 
+def uploadFile(path, fileName):
+    with open(path, "rb") as f:
+        r = requests.post(
+            f"http://127.0.0.1:5000/upload?name={fileName}",
+            files={"file": f}
+        )
+
+def zipFiles(source):
+    return shutil.make_archive(source, 'zip', source)
+
+def updateTemplateDetails(filePath):
+
+        NiceDate =  date.today().isoformat()
+        templateDetails = {"creator": "Ian", "version": 0.01, "time-created": NiceDate}
+        templateDetailsPath = os.path.join(filePath, "TemplateDetails.json")
+
+        with open(templateDetailsPath, "w", encoding="utf-8") as f:
+            json.dump(templateDetails, f, indent=4)
 
 def uploadTemplate():
     filePath = input("Enter folder path: ")
@@ -113,31 +131,12 @@ def uploadTemplate():
             return
 
         #Create/modify TemplateDetails.json
-
-        
-        
-        NiceDate =  date.today().isoformat()
-        templateDetails = {"creator": "Ian", "version": 0.01, "time-created": NiceDate}
-        templateDetailsPath = os.path.join(filePath, "TemplateDetails.json")
-
-        with open(templateDetailsPath, "w", encoding="utf-8") as f:
-            json.dump(templateDetails, f, indent=4)
- 
-        zip_path = shutil.make_archive(
-            filePath,  
-            'zip',
-            filePath   
-        )
+        updateTemplateDetails(filePath)
     
-
-    with open(zip_path, "rb") as f:
-        r = requests.post(
-            f"http://127.0.0.1:5000/upload?name={fileName}",
-            files={"file": f}
-        )
+        zip_path = zipFiles(filePath)
+    
+    uploadFile(zip_path, fileName)
     os.remove(zip_path)
-   # print(r.status_code)
-   # print(r.text)
     
 def createProject(chosentemplatePath):
         projectName = input("Enter project name: ")
@@ -149,71 +148,84 @@ def createProject(chosentemplatePath):
         projectTemplateDetailsPath = os.path.join(projectPath, "TemplateDetails.json")
         os.remove(projectTemplateDetailsPath)
 
-def templatesFunc():
+        return projectPath
+
+def loadTemplatePluginConfig(chosentemplatePath):
+        TemplatePluginConfigPath = os.path.join(chosentemplatePath, "TemplatePluginConfig.json")
+        with open(TemplatePluginConfigPath, "r", encoding='utf-8') as f:
+            return json.load(f)
+
+def loadTemplateModules(TemplatePluginConfig):
+        modules = []
+        TemplatePluginConfigValues = list(TemplatePluginConfig.values())
+        for plugin in list(TemplatePluginConfigValues):
+            module = plugin.get('module')
+            if module:
+                modules.append(module)
+
+        return modules
+
+def getArguements(TemplatePluginConfigValues, selectedModuleIndex):
+    pluginConfig = TemplatePluginConfigValues[selectedModuleIndex]
+    arguementsNeeded = pluginConfig.get("arguments")
+
+    passedArguments = []
+
+    for argument in arguementsNeeded:
+        argumentName = argument.get('name')
+        argumentType = argument.get('type')
+
+        argumentVal = input(f"Please enter a {argumentType} for {argumentName}: ")
+        passedArguments.append(argumentVal)
+
+    return passedArguments
+
+def chooseTemplate():
     templates = os.listdir(templatePath)
     templateIndex = querySelector(templates)
 
-    chosenTemplate = templates[templateIndex]
+    return templates[templateIndex]
+
+def configureProject(projectPath, chosentemplatePath):
+        TemplatePluginConfig = loadTemplatePluginConfig(chosentemplatePath)
+        TemplatePluginConfigValues = list(TemplatePluginConfig.values())
+
+        modules = loadTemplateModules(TemplatePluginConfig)
+
+        selectedModuleIndex = querySelector(modules)
+        selectedModule = modules[selectedModuleIndex]
+
+        plugin_directory = os.path.join(chosentemplatePath, "plugins")
+        plugin_path = os.path.join(plugin_directory, selectedModule + ".py")
+        spec = importlib.util.spec_from_file_location(
+            selectedModule, plugin_path
+        )
+
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+        passedArguments = getArguements(TemplatePluginConfigValues,  selectedModuleIndex)
+
+        module.run(projectPath, *passedArguments)
+
+
+def templatesFunc():
+    chosenTemplate = chooseTemplate()
     chosentemplatePath = os.path.join(templatePath, chosenTemplate)
 
-    options = querySelector(["Create Project", "Modify", "Details"])
+    options = querySelector(["Create Project", "Details"])
 
     match options:
         case 0:
-            createProject(chosentemplatePath)
+            
+            projectPath = createProject(chosentemplatePath)
 
             if not query(Fore.MAGENTA, "Would you like to use some plugins (if it has some) ? (Y//N)"):
                 return
-
-            TemplatePluginConfigPath = os.path.join(chosentemplatePath, "TemplatePluginConfig.json")
-            with open(TemplatePluginConfigPath, "r", encoding='utf-8') as f:
-                TemplatePluginConfig = json.load(f)
             
-            modules = []
-            TemplatePluginConfigValues = list(TemplatePluginConfig.values())
-            for plugin in list(TemplatePluginConfigValues):
-                module = plugin.get('module')
-                if module:
-                    modules.append(module)
+            configureProject(projectPath, chosentemplatePath)        
 
-            selectedModuleIndex = querySelector(modules)
-            selectedModule = modules[selectedModuleIndex]
-
-            print(selectedModule)
-
-            plugin_directory = os.path.join(chosentemplatePath, "plugins")
-            plugin_path = os.path.join(plugin_directory, selectedModule + ".py")
-            spec = importlib.util.spec_from_file_location(
-                selectedModule, plugin_path
-            )
-
-            module = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(module)
-
-            pluginConfig = TemplatePluginConfigValues[selectedModuleIndex]
-            arguementsNeeded = pluginConfig.get("arguments")
-
-            passedArguments = []
-
-            for argument in arguementsNeeded:
-                argumentName = argument.get('name')
-                argumentType = argument.get('type')
-
-                argumentVal = input(f"Please enter a {argumentType} for {argumentName}: ")
-                passedArguments.append(argumentVal)
-
-            module.run(*passedArguments)
         case 1:
-            Modification = querySelector(["Name"])
-            match Modification:
-                case 0:
-                    #change the name
-                    newName = input("Enter the new name the template should have: ")
-                    newNamePath = os.path.join(templatePath, newName)
-                    os.rename(chosentemplatePath, newNamePath)
-            print("test")
-
-        case 2:
             #extract details and print them out
             TemplateDetailsPath = os.path.join(chosentemplatePath, "TemplateDetails.json")
             with open(TemplateDetailsPath, "r") as f:
@@ -222,18 +234,22 @@ def templatesFunc():
                 for key, val in TemplateDetailsObject.items():
                     print(f"{key}: {val}")
 
+def getPathSettings():
+    pathSettings = []
+    print(settingKeys)
+    for key in settingKeys:
+        print(key)
+        if '-path' in key:
+            print("through")
+            pathSettings.append(key)
+    return pathSettings
+
 def settingsFunc():
     settingSubjectIndex = querySelector(["Paths"])
 
     match settingSubjectIndex:
         case 0:
-            pathSettings = []
-            print(settingKeys)
-            for key in settingKeys:
-                print(key)
-                if '-path' in key:
-                    print("through")
-                    pathSettings.append(key)
+            pathSettings = getPathSettings()
             pathSubjectIndex = querySelector(pathSettings)
             selectedPathKey = settingKeys[pathSubjectIndex]
 
