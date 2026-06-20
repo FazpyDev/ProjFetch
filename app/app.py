@@ -47,11 +47,14 @@ settingKeys = list(settings.keys())
 templatePath = settings.get('template-path', templatePath)
 projectPath = settings.get('project-path', '')
 
-ModeOptionFunctions = [downloadTemplate, uploadTemplate, manage_templates, settingsFunc, exit]
+def projects():
+    
+
+ModeOptionFunctions = [downloadTemplate, uploadTemplate, manage_templates, projects, settingsFunc, exit]
 
 while running:
 
-    ModeOption = querySelector(["Download Template", "Upload Template", "Create Project/Templates", "Settings", "Exit"])
+    ModeOption = querySelector(["Download Template", "Upload Template", "Create Project/Templates", "Projects", "Settings", "Exit"])
     ModeOptionFunctions[ModeOption]()
 
 write_settings_file()

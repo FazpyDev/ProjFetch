@@ -27,7 +27,7 @@ def read_settings_file():
             settings.clear()
 
         initialize_setting_key('template-path', template_path)
-        initialize_setting_key('project-path', '')    
+        initialize_setting_key('projects-path', 'C:\Projects\ProjFetch\app\projects')    
 
 def write_settings_file():
     """Commits current execution settings safely back down to local disk."""
