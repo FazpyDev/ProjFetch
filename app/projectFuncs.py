@@ -3,16 +3,16 @@ import os
 import shutil
 
 from clifunctions import querySelector
-
+from plugin_engine import extract_plugin_modules, prompt_plugin_arguments
 def configureProject(projectPath, chosentemplatePath):
-        from templateFuncs import (
-                loadTemplateModules, loadTemplatePluginConfig, getArguements
+        from template_manager import (
+                loadTemplatePluginConfig
         )
 
         TemplatePluginConfig = loadTemplatePluginConfig(chosentemplatePath)
         TemplatePluginConfigValues = list(TemplatePluginConfig.values())
 
-        modules = loadTemplateModules(TemplatePluginConfig)
+        modules = extract_plugin_modules(TemplatePluginConfig)
 
         selectedModuleIndex = querySelector(modules)
         selectedModule = modules[selectedModuleIndex]
@@ -26,7 +26,7 @@ def configureProject(projectPath, chosentemplatePath):
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
 
-        passedArguments = getArguements(TemplatePluginConfigValues,  selectedModuleIndex)
+        passedArguments = prompt_plugin_arguments(TemplatePluginConfigValues,  selectedModuleIndex)
 
         module.run(projectPath, *passedArguments)
 

@@ -3,7 +3,7 @@ from settings import saveSettings, getSettings
 from clifunctions import color_print, querySelector
 from colorama import Fore, Style
 from backendfuncs import downloadTemplate, uploadTemplate
-from templateFuncs import templatesFunc
+from template_manager import templatesFunc
 
 #FUNCTIONS
 

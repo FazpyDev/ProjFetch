@@ -1,7 +1,7 @@
 import requests, os, shutil
 from clifunctions import *
 
-from templateFuncs import updateTemplateDetails, zipFiles
+from file_uitls import write_template_metadata, zip_directory
 
 currentpath = os.path.dirname(os.path.realpath(__file__))
 templatePath = os.path.join(currentpath, "templates")
@@ -60,9 +60,9 @@ def uploadTemplate():
             return
 
         #Create/modify TemplateDetails.json
-        updateTemplateDetails(filePath)
+        write_template_metadata(filePath)
     
-        zip_path = zipFiles(filePath)
+        zip_path = zip_directory(filePath)
     
     uploadFile(zip_path, fileName)
     os.remove(zip_path)
