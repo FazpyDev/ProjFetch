@@ -187,11 +187,11 @@ TemplatePluginsConfig.json
 {
   "plugin_name": {
     "module": "function_name",
-    "text": "This is what will apear for the user when they pick out what plugins to use,
+    "text": "This is what will apear for the user when they pick out what plugins to use",
     "arguments": [
         {
             "name": "argument name, shown to user (enter {type} for the argument {name})",
-            "type": "datatype" (e.g. string, interger, etc.)
+            "type": "datatype (e.g. string, interger, etc.)" 
         }
     ]
   }
@@ -231,6 +231,21 @@ Example:
     }
   ]
 }
+```
+#This is how the file Structure looks like for the project/template:
+```
+Project/Template/
+│
+├── plugins/
+│   ├── __init__.py
+│   └── function_name.py
+│──Project/TemplateDetails.json
+│──TemplatePluginConfig.json
+└── website/
+    └── backend/
+        ├── app.py
+        ├── routes.py
+        └── run.py
 ```
 
 During execution ProjFetch automatically prompts the user.
