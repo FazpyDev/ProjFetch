@@ -91,7 +91,7 @@ ProjFetch/
 ## Clone Repository
 
 ```bash
-git clone https://github.com/<your-username>/ProjFetch.git
+git clone https://github.com/FazpyDev/ProjFetch.git
 cd ProjFetch
 ```
 
@@ -182,11 +182,18 @@ The plugin system is one of the main features of ProjFetch.
 Plugins are loaded dynamically at runtime.
 
 The engine extracts plugin modules from:
-
+TemplatePluginsConfig.json
 ```json
 {
-  "plugin1": {
-    "module": "name_change"
+  "plugin_name": {
+    "module": "function_name",
+    "text": "This is what will apear for the user when they pick out what plugins to use,
+    "arguments": [
+        {
+            "name": "argument name, shown to user (enter {type} for the argument {name})",
+            "type": "datatype" (e.g. string, interger, etc.)
+        }
+    ]
   }
 }
 ```
@@ -194,7 +201,9 @@ The engine extracts plugin modules from:
 and executes them after collecting any required arguments.
 
 ## Example Plugin
+# ALL plugins must take project path! I decided this because i believe it is too necessary and saves a lot of pain from the user.
 
+function_name.py
 ```python
 def run(project_path, new_name):
     print(project_path)
@@ -204,7 +213,7 @@ def run(project_path, new_name):
 
 # Plugin Arguments
 
-Plugins can define arguments in:
+As earlier above, Plugins can define arguments in:
 
 ```text
 TemplatePluginConfig.json
@@ -212,6 +221,7 @@ TemplatePluginConfig.json
 
 Example:
 
+*this is all inside the module object in ```TemplatePluginConfig.json```*
 ```json
 {
   "arguments": [
