@@ -1,6 +1,7 @@
 import json
 import os
-
+from clifunctions import color_print
+from colorama import Fore, Style
 settings = {}
 
 current_path = os.path.dirname(os.path.realpath(__file__))
@@ -14,6 +15,9 @@ def initialize_setting_key(key_name, default_value):
 
 def read_settings_file():
     """Reads configuration data directly from the system storage layer."""
+    if not os.path.exists(SETTINGS_FILE_PATH):
+        color_print(Fore.RED, "Settings.json does not exist!")
+        return
     with open(SETTINGS_FILE_PATH, "r", encoding='utf-8') as f:
         try:
             loaded_data = json.load(f)

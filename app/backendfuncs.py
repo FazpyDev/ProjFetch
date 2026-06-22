@@ -2,6 +2,8 @@ import requests, os, shutil
 from clifunctions import *
 
 from file_uitls import write_template_metadata, zip_directory
+from clifunctions import color_print
+from colorama import Fore, Style
 
 currentpath = os.path.dirname(os.path.realpath(__file__))
 templatePath = os.path.join(currentpath, "templates")
@@ -47,6 +49,7 @@ def uploadTemplate():
 
     if not os.path.exists(filePath):
         print("Path does not exist")
+        color_print(Fore.RED, "Path does not exist!")
         return
 
     fileName = input("Template name: ")
@@ -56,7 +59,7 @@ def uploadTemplate():
         return
     else:
         if not os.path.isdir(filePath):
-            print("You must provide a folder (not a file)")
+            color_print(Fore.RED, "You must provide a folder, not a file! ")
             return
 
         #Create/modify TemplateDetails.json

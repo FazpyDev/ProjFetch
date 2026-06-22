@@ -5,7 +5,7 @@
         "arguments": [
             {
                 "name": "new_name",
-                "type": "string"
+                "type": "interger"
             }
         ]
     }
