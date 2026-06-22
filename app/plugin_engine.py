@@ -16,7 +16,7 @@ def extract_plugin_modules(plugin_config):
 
 type_map = {
     "string": str,
-    "interger": int,
+    "integer": int,
     "float": float,
     "boolean": lambda s: s.lower() == "true",
     "array": list,
